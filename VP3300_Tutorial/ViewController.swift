@@ -33,6 +33,8 @@ extension String {
 
 class ViewController: UIViewController, IDT_VP3300_Delegate, CBCentralManagerDelegate {
     
+    var centralManager: CBCentralManager!
+    
     @IBOutlet weak var connectionStatus: UILabel!
     @IBOutlet weak var lcdTextView: UITextView!
     @IBOutlet weak var logTextView: UITextView!
@@ -40,7 +42,7 @@ class ViewController: UIViewController, IDT_VP3300_Delegate, CBCentralManagerDel
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-               
+        centralManager = CBCentralManager(delegate: self, queue: .none, options: .none)
         IDT_VP3300.sharedController().delegate = self
     }
     
@@ -51,7 +53,7 @@ class ViewController: UIViewController, IDT_VP3300_Delegate, CBCentralManagerDel
             break
         case .poweredOff:
             print("Bluetooth is Off.")
-            openBluetooth()
+            showBluetoothEnableAlert ()
             break
         case .resetting:
             break
@@ -64,10 +66,48 @@ class ViewController: UIViewController, IDT_VP3300_Delegate, CBCentralManagerDel
         }
     }
     
+    func showBluetoothEnableAlert () {
+        // create the alert
+        let alert = UIAlertController(
+            title: "Notice",
+            message: "In order to work with Bluetooth Payment Device you need to enable bluetooth in the device",
+            preferredStyle: UIAlertControllerStyle.alert)
+        
+        // add the actions (buttons)
+        alert.addAction(UIAlertAction(title: "Enable Bluetooth", style: UIAlertActionStyle.default, handler: handleBluetoothEnableActoin))
+        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
+        
+        // show the alert
+        present(alert, animated: true, completion: nil)
+    }
+    
+    func handleBluetoothEnableActoin(action: UIAlertAction!) {
+        switch action.style {
+        case .default:
+            print("default")
+            openBluetooth()
+            break
+        case .cancel:
+            print("cancel")
+            break
+        case .destructive:
+            print("destructive")
+            break
+        }
+    }
+    
     func openBluetooth(){
-        let url = URL(string: "App-Prefs:root=Bluetooth") //for bluetooth setting
-        let app = UIApplication.shared
-        app.openURL(url!)
+        if let url = URL(string:UIApplicationOpenSettingsURLString) {
+            if UIApplication.shared.canOpenURL(url) {
+                if #available(iOS 10.0, *) {
+                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                } else {
+                    let url = URL(string: "App-Prefs:root=Bluetooth") //for bluetooth setting
+                    let app = UIApplication.shared
+                    app.openURL(url!)
+                }
+            }
+        }
     }
 
     override func didReceiveMemoryWarning() {
